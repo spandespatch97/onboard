@@ -38,18 +38,11 @@ let repoIntelContext = '';
 if (fs.existsSync(mapFile)) {
   try {
     const { binary } = require('@agentsys/lib');
-    const health = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'health', '--map-file', mapFile, cwd]));
-    const hotspots = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'hotspots', '--top', '10', '--map-file', mapFile, cwd]));
-    const contributors = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'contributors', '--top', '5', '--map-file', mapFile, cwd]));
-    const norms = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'norms', '--map-file', mapFile, cwd]));
-    const areas = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'areas', '--map-file', mapFile, cwd]));
+    const onboardData = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'onboard', '--map-file', mapFile, cwd]));
+    const canHelp = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'can-i-help', '--map-file', mapFile, cwd]));
 
-    repoIntelContext = '\n\nRepo-intel data (use to enrich the summary):';
-    repoIntelContext += '\nHealth: ' + JSON.stringify(health);
-    repoIntelContext += '\nTop hotspots: ' + hotspots.map(h => h.path).join(', ');
-    repoIntelContext += '\nContributors: ' + contributors.map(c => `${c.name} (${c.commits} commits)`).join(', ');
-    repoIntelContext += '\nConventions: ' + JSON.stringify(norms.commits);
-    repoIntelContext += '\nAreas: ' + areas.filter(a => a.health !== 'healthy').map(a => `${a.area} (${a.health})`).join(', ');
+    repoIntelContext = '\n\nRepo-intel onboard data (structured summary from binary - use this as the primary source):\n' + JSON.stringify(onboardData, null, 2);
+    repoIntelContext += '\n\nContributor guidance:\n' + JSON.stringify(canHelp, null, 2);
   } catch (e) { /* unavailable */ }
 }
 ```
