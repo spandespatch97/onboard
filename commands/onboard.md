@@ -2,7 +2,7 @@
 description: Onboard to any codebase - generates a structured overview then guides you interactively through the project
 codex-description: 'Use when user asks to "onboard to project", "what does this project do", "summarize codebase", "get oriented", "new to this repo", "quick overview". Generates structured project summary then guides interactively.'
 argument-hint: "[path] [--depth=quick|normal|deep]"
-allowed-tools: Bash(git:*), Read, Glob, Grep, Task, Write, AskUserQuestion
+allowed-tools: Bash(git:*), Read, Glob, Grep, Task, AskUserQuestion
 ---
 
 # /onboard - Codebase Onboarding

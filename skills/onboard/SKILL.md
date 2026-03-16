@@ -19,7 +19,7 @@ Automated data collection + LLM synthesis + interactive guidance.
   │   ├─ readFileIfExists()→ README.md, CLAUDE.md
   │   ├─ scanCI()          → .github/workflows, Dockerfile
   │   ├─ getGitInfo()      → branch, commit count, remote
-  │   ├─ getRepoIntel()    → onboard, can-i-help, hotspots, test-gaps, doc-drift
+  │   ├─ getRepoIntel()    → onboard query, hotspots
   │   └─ getRepoMap()      → symbols, imports, exports (if available)
   │
   ├─ Phase 2: onboard-agent (Opus)
@@ -55,10 +55,7 @@ The collector produces a single JSON object:
   "gitInfo": { "branch": "main", "commitCount": 232, "lastCommit": "2026-03-15", "remoteUrl": "..." },
   "repoIntel": {
     "onboard": { "language": "typescript", "structure": "single package", "health": "active", ... },
-    "canHelp": { "goodFirstAreas": [...], "needsHelp": [...] },
-    "hotspots": [...],
-    "testGaps": [...],
-    "docDrift": [...]
+    "hotspots": [...]
   },
   "repoMap": { "totalFiles": 45, "totalSymbols": 312, "keyExports": { "src/index.ts": ["Queue", "Worker", ...] } }
 }
