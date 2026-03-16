@@ -5,7 +5,6 @@
 ## Agents
 
 - onboard-agent (opus) - codebase orientation and guided tour
-- can-i-help-agent (opus) - contributor guidance matching skills to project needs
 
 ## Skills
 
@@ -14,7 +13,6 @@
 ## Commands
 
 - /onboard - "what is this project?" - orientation for newcomers
-- /can-i-help - "where can I contribute?" - matches developer skills to project needs
 
 ## Critical Rules
 

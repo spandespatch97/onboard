@@ -1,13 +1,11 @@
 {
   "agents": [
-    "onboard-agent",
-    "can-i-help-agent"
+    "onboard-agent"
   ],
   "skills": [
     "onboard"
   ],
   "commands": [
-    "onboard",
-    "can-i-help"
+    "onboard"
   ]
 }
