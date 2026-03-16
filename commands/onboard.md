@@ -1,13 +1,13 @@
 ---
-description: Generate a quick codebase summary for onboarding - project purpose, tech stack, architecture, entry points, build/test steps
-codex-description: 'Use when user asks to "onboard to project", "what does this project do", "summarize codebase", "get oriented", "new to this repo", "quick overview". Generates a structured project summary for developers new to a codebase.'
-argument-hint: "[path] [--depth=quick|normal|deep] [--output=display|file]"
-allowed-tools: Bash(git:*), Read, Glob, Grep, Task, Write
+description: Onboard to any codebase - generates a structured overview then guides you interactively through the project
+codex-description: 'Use when user asks to "onboard to project", "what does this project do", "summarize codebase", "get oriented", "new to this repo", "quick overview". Generates structured project summary then guides interactively.'
+argument-hint: "[path] [--depth=quick|normal|deep]"
+allowed-tools: Bash(git:*), Read, Glob, Grep, Task, Write, AskUserQuestion
 ---
 
-# /onboard - Quick Codebase Summary
+# /onboard - Codebase Onboarding
 
-Generate a structured overview of any codebase to help developers get oriented quickly.
+Onboard to any codebase. Collects project data automatically (no LLM), then an agent synthesizes it and guides you interactively.
 
 ## Arguments
 
@@ -15,94 +15,63 @@ Parse from `$ARGUMENTS`:
 
 - **Path**: Directory to analyze (default: current directory)
 - `--depth`: Analysis depth
-  - `quick`: Package.json/Cargo.toml + README + directory structure only
-  - `normal` (default): + key source files, entry points, patterns
-  - `deep`: + dependency analysis, architecture diagram, convention detection
-- `--output`: Where to put the summary
-  - `display` (default): Output to conversation
-  - `file`: Write to `.onboard.md` in the repo root
+  - `quick`: Manifest + README + directory tree only (~2s)
+  - `normal` (default): + CLAUDE.md, CI, repo-intel (~5s)
+  - `deep`: + repo-map AST symbols (~15s)
 
-## Execution
-
-### Step 1: Pre-fetch Repo-Intel (Optional)
+## Phase 1: Automated Data Collection (Pure JS)
 
 ```javascript
-const fs = require('fs');
-const path = require('path');
-const cwd = process.cwd();
-const stateDir = ['.claude', '.opencode', '.codex']
-  .find(d => fs.existsSync(path.join(cwd, d))) || '.claude';
-const mapFile = path.join(cwd, stateDir, 'repo-intel.json');
+const { getPluginRoot } = require('@agentsys/lib/cross-platform');
+const pluginRoot = getPluginRoot('onboard');
+const collector = require(`${pluginRoot}/lib/collector`);
 
-let repoIntelContext = '';
-if (fs.existsSync(mapFile)) {
-  try {
-    const { binary } = require('@agentsys/lib');
-    const onboardData = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'onboard', '--map-file', mapFile, cwd]));
-    const canHelp = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'can-i-help', '--map-file', mapFile, cwd]));
+const args = '$ARGUMENTS'.split(' ').filter(Boolean);
+const depth = args.find(a => a.startsWith('--depth='))?.split('=')[1] || 'normal';
+const targetPath = args.find(a => !a.startsWith('--')) || process.cwd();
 
-    repoIntelContext = '\n\nRepo-intel onboard data (structured summary from binary - use this as the primary source):\n' + JSON.stringify(onboardData, null, 2);
-    repoIntelContext += '\n\nContributor guidance:\n' + JSON.stringify(canHelp, null, 2);
-  } catch (e) { /* unavailable */ }
-}
+console.log(`[INFO] Collecting project data (depth: ${depth})...`);
+const data = collector.collect(targetPath, { depth });
+
+console.log(`[OK] Data collected:`);
+console.log(`  Manifest: ${data.manifest?.type || 'none'} (${data.manifest?.language || '?'})`);
+console.log(`  Structure: ${data.structure?.length || 0} directories`);
+console.log(`  README: ${data.readme ? 'found' : 'missing'}`);
+console.log(`  Repo-intel: ${data.repoIntel ? 'available' : 'unavailable'}`);
+console.log(`  Repo-map: ${data.repoMap ? data.repoMap.totalFiles + ' files, ' + data.repoMap.totalSymbols + ' symbols' : 'unavailable'}`);
 ```
 
-### Step 2: Spawn Onboard Agent
+## Phase 2: Agent Synthesis + Interactive Guidance
 
 ```javascript
 await Task({
   subagent_type: "onboard:onboard-agent",
-  prompt: `Generate a codebase onboarding summary.
-Path: ${targetPath}
-Depth: ${depth}
-${repoIntelContext}
+  prompt: `Onboard the user to this codebase.
 
-Analyze the project and produce a structured summary.`
+## Collected Data (already gathered, do NOT re-scan files)
+
+${JSON.stringify(data, null, 2)}
+
+## Your Job
+
+1. **Synthesize** the collected data into a clear, concise summary (2-3 min read)
+2. **Read key files** that the data points to - entry points, main modules, interesting patterns
+3. **Present the summary** to the user
+4. **Ask what they want to do** - fix a bug? add a feature? understand a specific area?
+5. **Guide them** to the right files using coupling, ownership, and symbol data
+
+Use the repo-intel data to add insights:
+- Hotspots: "This file changes frequently - it's where active development is"
+- Pain points: "This area has a high bug rate - be careful here"
+- Test gaps: "These files have no test coupling - consider adding tests"
+- Ownership: "Alice maintains this area, Bob handles that"
+- Doc drift: "These docs haven't been updated with code changes"
+
+Use repo-map data (if available) to trace code:
+- "This function is exported from X and imported by Y and Z"
+- "The main entry point calls these modules in this order"
+
+Do NOT just dump the JSON. Synthesize it into human-readable insights.
+After the summary, ask the user what they want to explore.`
 });
-```
-
-### Step 3: Output
-
-If `--output=file`, write the summary to `.onboard.md` in the repo root.
-Otherwise, display directly in the conversation.
-
-## Output Format
-
-```markdown
-# Project: {name}
-
-## What This Project Does
-{1-2 sentence purpose statement}
-
-## Tech Stack
-- **Language**: {language} {version}
-- **Framework**: {framework}
-- **Build**: {build tool}
-- **Tests**: {test framework}
-
-## Project Structure
-{directory tree with annotations}
-
-## Key Entry Points
-- **Main**: {entry file} - {what it does}
-- **Config**: {config files}
-- **Tests**: {test location and how to run}
-
-## Getting Started
-```bash
-{install command}
-{build command}
-{test command}
-{run command}
-```
-
-## Architecture Overview
-{2-3 paragraphs on how the code is organized}
-
-## Active Development Areas
-{hotspots and recent activity from repo-intel if available}
-
-## Conventions
-- {commit style}
-- {code patterns observed}
 ```

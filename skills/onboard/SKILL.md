@@ -1,107 +1,67 @@
 ---
 name: onboard
-description: "Use when user asks to \"onboard to project\", \"what does this project do\", \"summarize codebase\", \"get oriented\", \"new to this repo\", \"quick overview\", \"project summary\", \"codebase tour\". Generates a structured onboarding summary."
+description: "Use when user asks to \"onboard to project\", \"what does this project do\", \"summarize codebase\", \"get oriented\", \"new to this repo\", \"quick overview\", \"project summary\", \"codebase tour\", \"help me understand this code\". Collects project data automatically then guides interactively."
 argument-hint: "[path] [--depth=quick|normal|deep]"
 ---
 
 # Onboard Skill
 
-Generate a structured codebase onboarding summary.
+Automated data collection + LLM synthesis + interactive guidance.
 
-## Parse Arguments
+## Architecture
 
-```javascript
-const args = '$ARGUMENTS'.split(' ').filter(Boolean);
-const depth = args.find(a => a.startsWith('--depth='))?.split('=')[1] || 'normal';
-const targetPath = args.find(a => !a.startsWith('--')) || '.';
+```
+/onboard
+  │
+  ├─ Phase 1: collector.js (pure JS, zero LLM)
+  │   ├─ scanManifest()    → package.json/Cargo.toml/go.mod
+  │   ├─ scanStructure()   → directory tree with file counts
+  │   ├─ readFileIfExists()→ README.md, CLAUDE.md
+  │   ├─ scanCI()          → .github/workflows, Dockerfile
+  │   ├─ getGitInfo()      → branch, commit count, remote
+  │   ├─ getRepoIntel()    → onboard, can-i-help, hotspots, test-gaps, doc-drift
+  │   └─ getRepoMap()      → symbols, imports, exports (if available)
+  │
+  ├─ Phase 2: onboard-agent (Opus)
+  │   ├─ Synthesize collected data into readable summary
+  │   ├─ Read key source files for architecture understanding
+  │   └─ Present summary to user
+  │
+  └─ Phase 3: Interactive (conversational)
+      ├─ "What do you want to do?"
+      ├─ Guide to files using coupling + ownership + symbols
+      └─ Answer follow-up questions with full context
 ```
 
 ## Depth Levels
 
-| Level | What's analyzed | Time |
-|-------|----------------|------|
-| `quick` | Manifest + README + directory tree | ~5s |
-| `normal` | + entry points, key source files, conventions | ~15s |
-| `deep` | + dependency graph, architecture analysis, repo-intel | ~30s |
+| Level | What's collected | Time |
+|-------|-----------------|------|
+| `quick` | Manifest + README + structure + git info | ~2s |
+| `normal` | + CLAUDE.md + CI + repo-intel (auto-generates if missing) | ~5s |
+| `deep` | + repo-map AST symbols | ~15s |
 
-## Pre-check: Ensure Repo-Intel
+## Data Flow
 
-For `normal` and `deep` depth, check if repo-intel data is available:
+The collector produces a single JSON object:
 
-```javascript
-const fs = require('fs');
-const path = require('path');
-
-const cwd = process.cwd();
-const stateDir = ['.claude', '.opencode', '.codex']
-  .find(d => fs.existsSync(path.join(cwd, d))) || '.claude';
-const mapFile = path.join(cwd, stateDir, 'repo-intel.json');
-
-if (!fs.existsSync(mapFile) && depth !== 'quick') {
-  const response = await AskUserQuestion({
-    questions: [{
-      question: 'Generate repo-intel?',
-      description: 'No repo-intel map found. Generating one enriches the onboarding summary with activity data, contributors, and code health. Takes ~5 seconds.',
-      options: [
-        { label: 'Yes, generate it', value: 'yes' },
-        { label: 'Skip', value: 'no' }
-      ]
-    }]
-  });
-
-  if (response === 'yes' || response?.['Generate repo-intel?'] === 'yes') {
-    try {
-      const { binary } = require('@agentsys/lib');
-      const output = binary.runAnalyzer(['repo-intel', 'init', cwd]);
-      const stateDirPath = path.join(cwd, stateDir);
-      if (!fs.existsSync(stateDirPath)) fs.mkdirSync(stateDirPath, { recursive: true });
-      fs.writeFileSync(mapFile, output);
-    } catch (e) {
-      // Binary not available
-    }
-  }
+```json
+{
+  "manifest": { "type": "npm", "name": "...", "language": "typescript", "scripts": [...], "dependencies": {...} },
+  "readme": "# Project\n...",
+  "claudeMd": "# Rules\n...",
+  "structure": [{ "path": "src/", "depth": 1, "files": 23, "dirs": 5 }, ...],
+  "ci": { "github": true, "workflows": ["ci.yml", "release.yml"], "dockerfile": false },
+  "gitInfo": { "branch": "main", "commitCount": 232, "lastCommit": "2026-03-15", "remoteUrl": "..." },
+  "repoIntel": {
+    "onboard": { "language": "typescript", "structure": "single package", "health": "active", ... },
+    "canHelp": { "goodFirstAreas": [...], "needsHelp": [...] },
+    "hotspots": [...],
+    "testGaps": [...],
+    "docDrift": [...]
+  },
+  "repoMap": { "totalFiles": 45, "totalSymbols": 312, "keyExports": { "src/index.ts": ["Queue", "Worker", ...] } }
 }
 ```
 
-## Analysis Steps
-
-### 1. Project Identity
-
-Detect from manifest files:
-- Name, version, description
-- Language and framework
-- Build tool and test framework
-- Entry points
-
-### 2. Directory Structure
-
-Generate annotated directory tree (depth 3, exclude noise directories).
-
-### 3. Key Files
-
-Read and summarize:
-- README.md (purpose, setup)
-- Main entry point (architecture)
-- Config files (build, CI, deploy)
-- Test setup (framework, patterns)
-
-### 4. Repo-Intel Enrichment
-
-If repo-intel data is available, add:
-- **Hotspots**: Most actively changed files (where development focus is)
-- **Contributors**: Who maintains what
-- **Health**: Bus factor, AI contribution ratio
-- **Conventions**: Commit style, scope usage
-- **Areas**: Directory health overview
-
-### 5. Getting Started
-
-Extract or infer:
-- Install command
-- Build command
-- Test command
-- Run command
-
-## Output Format
-
-Structured markdown summary readable in 2-3 minutes. See command file for full format spec.
+This is passed as the agent's prompt context. The agent reads key files to fill gaps, then presents a synthesized summary. No data collection happens in the LLM - only synthesis and guidance.
